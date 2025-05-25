@@ -8,6 +8,7 @@ export default function Home() {
   const [targetLanguage, setTargetLanguage] = useState("en");
   const [isTranslating, setIsTranslating] = useState(false);
   const [error, setError] = useState("");
+  const [detectedLanguage, setDetectedLanguage] = useState("");
 
   const languages = [
     { code: "en", name: "English" },
@@ -35,11 +36,28 @@ export default function Home() {
     setError("");
     
     try {
-      // TODO: Integracja z API AI (Marceli Jaremko)
-      // Symulacja tłumaczenia na potrzeby UI
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      setTranslatedText(`[Przetłumaczony tekst na ${languages.find(l => l.code === targetLanguage)?.name}]: ${inputText}`);
+      // Call the OpenAI translation API endpoint
+      const response = await fetch('/api/translate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: inputText,
+          targetLanguage: languages.find(l => l.code === targetLanguage)?.name || 'English',
+        }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Błąd podczas tłumaczenia');
+      }
+      
+      const data = await response.json();
+      setTranslatedText(data.translatedText);
+      setDetectedLanguage(data.sourceLanguage);
     } catch (err) {
+      console.error('Translation error:', err);
       setError("Wystąpił błąd podczas tłumaczenia. Spróbuj ponownie.");
     } finally {
       setIsTranslating(false);
@@ -75,6 +93,7 @@ export default function Home() {
   const clearAll = () => {
     setInputText("");
     setTranslatedText("");
+    setDetectedLanguage("");
     setError("");
   };
 
@@ -223,6 +242,9 @@ export default function Home() {
             {/* Translation Info */}
             {translatedText && (
               <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                <p className="text-blue-700 dark:text-blue-400 text-sm mb-1">
+                  Wykryty język: {detectedLanguage}
+                </p>
                 <p className="text-blue-700 dark:text-blue-400 text-sm">
                   Przetłumaczono na: {languages.find(l => l.code === targetLanguage)?.name}
                 </p>
