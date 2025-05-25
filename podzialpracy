@@ -1,0 +1,47 @@
+AI Translator – Platforma webowa umożliwiająca tłumaczenie tekstu w czasie rzeczywistym z
+wykorzystaniem sztucznej inteligencji. Użytkownik wprowadza tekst, wybiera język docelowy, a
+aplikacja tłumaczy go przy użyciu nowoczesnych modeli AI.
+ Wymagania funkcjonalne aplikacji
+1. Wprowadzanie tekstu do tłumaczenia
+2. Wybór języka docelowego
+3. Tłumaczenie tekstu przy użyciu modelu AI (np. OpenAI, OpenRouter)
+4. Wyświetlanie przetłumaczonego tekstu
+5. Historia tłumaczeń (dla zalogowanych użytkowników – opcjonalnie)
+6. Responsywny interfejs użytkownika (desktop/mobile)
+7. Możliwość kopiowania i zapisywania tłumaczeń
+8. Obsługa błędów – np. brak połączenia z API, błędny format tekstu
+ Podział na moduły wraz z opisem technologii
+Przydział odpowiedzialności w zespole
+Moduł Opis Technologia
+Frontend (UI) Interfejs użytkownika – input tekstu, przyciski,
+wybór języków
+Next.js 14, TypeScript,
+TailwindCSS
+API tłumaczeń Komunikacja z zewnętrznym modelem AI,
+obsługa żądań i odpowiedzi
+API Routes w Next.js,
+OpenRouter API / OpenAI
+Zarządzanie
+stanem Przechowywanie tekstu, języka, wyniku React hooks, Context API lub
+Zustand
+Historia
+tłumaczeń
+Przechowywanie wcześniejszych tłumaczeń
+(opcjonalnie, dla zalogowanych)
+Supabase / Firebase
+(opcjonalnie)
+Autoryzacja
+(opcjonalnie)
+Możliwość logowania / rejestracji dla
+użytkowników
+NextAuth.js lub Supabase
+Auth
+Członek
+zespołu Odpowiedzialność
+Bartłomiej
+Winiarek
+Frontend UI – projekt i implementacja interfejsu,
+responsywność
+Marceli
+Jaremko Integracja z API AI, logika tłumaczenia, zarządzanie błędami
+Kuba Płatos Historia tłumaczeń, opcjonalna baza danych i autoryzacja
