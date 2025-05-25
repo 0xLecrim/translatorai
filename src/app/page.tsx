@@ -1,6 +1,10 @@
 "use client";
 
 import { useState } from "react";
+import { useAuthState } from "../hooks/useAuth";
+import { useTranslationHistory } from "../hooks/useTranslationHistory";
+import AuthModal from "../components/AuthModal";
+import TranslationHistory from "../components/TranslationHistory";
 
 export default function Home() {
   const [inputText, setInputText] = useState("");
@@ -9,6 +13,12 @@ export default function Home() {
   const [isTranslating, setIsTranslating] = useState(false);
   const [error, setError] = useState("");
   const [detectedLanguage, setDetectedLanguage] = useState("");
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [showHistory, setShowHistory] = useState(false);
+
+  // Authentication and history hooks
+  const { user, logout } = useAuthState();
+  const { saveTranslation } = useTranslationHistory(user?.id);
 
   const languages = [
     { code: "en", name: "English" },
@@ -56,6 +66,16 @@ export default function Home() {
       const data = await response.json();
       setTranslatedText(data.translatedText);
       setDetectedLanguage(data.sourceLanguage);
+
+      // Save translation to history
+      if (data.translatedText && data.sourceLanguage) {
+        await saveTranslation({
+          originalText: inputText,
+          translatedText: data.translatedText,
+          sourceLanguage: data.sourceLanguage,
+          targetLanguage: languages.find(l => l.code === targetLanguage)?.name || 'English'
+        });
+      }
     } catch (err) {
       console.error('Translation error:', err);
       setError("Wystąpił błąd podczas tłumaczenia. Spróbuj ponownie.");
@@ -97,6 +117,17 @@ export default function Home() {
     setError("");
   };
 
+  const handleSelectTranslation = (translation: any) => {
+    setInputText(translation.originalText);
+    setTranslatedText(translation.translatedText);
+    setDetectedLanguage(translation.sourceLanguage);
+    const targetLang = languages.find(l => l.name === translation.targetLanguage);
+    if (targetLang) {
+      setTargetLanguage(targetLang.code);
+    }
+    setShowHistory(false);
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
       {/* Header */}
@@ -111,15 +142,53 @@ export default function Home() {
               </div>
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">AI Translator</h1>
             </div>
-            <p className="hidden sm:block text-sm text-gray-600 dark:text-gray-400">
-              Tłumaczenie tekstu w czasie rzeczywistym
-            </p>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={() => setShowHistory(!showHistory)}
+                className="flex items-center space-x-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white transition-colors"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className="hidden sm:inline">Historia</span>
+              </button>
+              {user ? (
+                <div className="flex items-center space-x-3">
+                  <span className="text-sm text-gray-600 dark:text-gray-400">
+                    Witaj, {user.username}!
+                  </span>
+                  <button
+                    onClick={logout}
+                    className="px-3 py-2 text-sm text-red-600 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
+                  >
+                    Wyloguj
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={() => setShowAuthModal(true)}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-colors"
+                >
+                  Zaloguj się
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </header>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* History Section */}
+        {showHistory && (
+          <div className="mb-8">
+            <TranslationHistory 
+              userId={user?.id} 
+              onSelectTranslation={handleSelectTranslation}
+            />
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Input Section */}
           <div className="bg-white dark:bg-gray-800 rounded-xl shadow-lg p-6">
@@ -182,7 +251,7 @@ export default function Home() {
               ) : (
                 <>
                   <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 716.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
                   </svg>
                   <span>Przetłumacz</span>
                 </>
@@ -268,21 +337,21 @@ export default function Home() {
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 text-center shadow-sm">
             <div className="w-12 h-12 bg-green-100 dark:bg-green-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 016.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5h12M9 3v2m1.048 9.5A18.022 18.022 0 716.412 9m6.088 9h7M11 21l5-10 5 10M12.751 5C11.783 10.77 8.07 15.61 3 18.129" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Wiele języków</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Obsługa ponad 13 języków z możliwością łatwego rozszerzenia</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Historia tłumaczeń</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Zapisywanie i przeglądanie wcześniejszych tłumaczeń dla zalogowanych użytkowników</p>
           </div>
 
           <div className="bg-white dark:bg-gray-800 rounded-lg p-6 text-center shadow-sm">
             <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center mx-auto mb-4">
               <svg className="w-6 h-6 text-purple-600 dark:text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
               </svg>
             </div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Responsywny design</h3>
-            <p className="text-gray-600 dark:text-gray-400 text-sm">Optymalizacja dla urządzeń mobilnych i komputerów stacjonarnych</p>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Konta użytkowników</h3>
+            <p className="text-gray-600 dark:text-gray-400 text-sm">Opcjonalna rejestracja i logowanie dla dodatkowych funkcji</p>
           </div>
         </div>
       </main>
@@ -297,6 +366,16 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={showAuthModal}
+        onClose={() => setShowAuthModal(false)}
+        onSuccess={() => {
+          setShowAuthModal(false);
+          // Optionally show a success message
+        }}
+      />
     </div>
   );
 }
